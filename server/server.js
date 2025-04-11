@@ -6,6 +6,9 @@ const authRoutes = require("./routes/authRoutes"); // ✅ Ensure this matches yo
 const userRoutes = require("./routes/userRoutes");
 const donorRoutes = require("./routes/donorRoutes");
 const recipientRoutes = require("./routes/recipientRoutes");
+const donationRequestRoutes = require("./routes/donationrequestRoutes"); // 👈 Add this
+
+
 
 dotenv.config();
 
@@ -15,11 +18,16 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+
+
+
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/donors", donorRoutes);
 app.use("/api/recipients", recipientRoutes);
+app.use("/api/donation-requests", donationRequestRoutes); // 👈 Add this
+
 
 // Connect to MongoDB
 mongoose

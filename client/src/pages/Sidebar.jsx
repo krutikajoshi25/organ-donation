@@ -58,32 +58,47 @@ const Sidebar = () => {
         }}
       >
         <List>
-          <ListItem
-            button
-            component={Link}
-            to="/dashboard"
-            sx={{ "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.2)" } }}
-          >
-            <ListItemText primary="Dashboard" sx={{ fontWeight: "bold", color: "white" }} />
-          </ListItem>
+        <ListItem
+        button
+        component={Link}
+        to="/dashboard"
+        sx={{
+          "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.2)" },
+        }}
+      >
+        <ListItemText
+          primary="Dashboard"
+          sx={{ fontWeight: "bold", color: "white" }}
+        />
+      </ListItem>
 
-          <ListItem
-            button
-            component={Link}
-            to="/profile"
-            sx={{ "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.2)" } }}
-          >
-            <ListItemText primary="My Profile" sx={{ fontWeight: "bold", color: "white" }} />
-          </ListItem>
+      <ListItem
+        button
+        component={Link}
+        to="/profile"
+        sx={{
+          "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.2)" },
+        }}
+      >
+        <ListItemText
+          primary="My Profile"
+          sx={{ fontWeight: "bold", color: "white" }}
+        />
+      </ListItem>
 
-          <ListItem
-            button
-            component={Link}
-            to="/donation-request"
-            sx={{ "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.2)" } }}
-          >
-            <ListItemText primary="Donation Request" sx={{ fontWeight: "bold", color: "white" }} />
-          </ListItem>
+      <ListItem
+        button
+        component={Link}
+        to="/donation-request"
+        sx={{
+          "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.2)" },
+        }}
+      >
+        <ListItemText
+          primary="Donation Request"
+          sx={{ fontWeight: "bold", color: "white" }}
+        />
+      </ListItem>
         </List>
       </Box>
     </>

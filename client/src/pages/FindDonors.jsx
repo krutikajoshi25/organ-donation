@@ -10,6 +10,13 @@ import {
   Card,
   CardContent,
   Container,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
 } from "@mui/material";
 import Navbar from "../styles/Navbar";
 
@@ -35,12 +42,100 @@ const FindDonors = () => {
     country: "",
   });
 
+  // const [donors, setDonors] = useState([]);
   const [donors, setDonors] = useState([]);
   const [searched, setSearched] = useState(false);
+  const [requestedDonors, setRequestedDonors] = useState([]);
+  const [requestStatus, setRequestStatus] = useState({});
+
+
+
+
   const handleChange = (e) => {
     setSearchCriteria({ ...searchCriteria, [e.target.name]: e.target.value });
   };
 
+
+
+
+
+  // const handleRequest = async (donor) => {
+  //   try {
+
+  //      // Disable the button after request
+  //   setRequestStatus((prev) => ({
+  //     ...prev,
+  //     [donor.phone]: "Request sent.notify you shortly.",
+  //   }
+ 
+  // ));
+
+
+
+    
+  //     const response = await axios.post("http://localhost:5000/api/donation-requests", {
+  //       name: donor.fullName,
+  //       phone: donor.phone,
+  //       gender: donor.gender,
+  //       dob: donor.dob,
+  //       city: donor.city,
+  //       state: donor.state,
+  //       country: donor.country,
+  //       organ: donor.organType,
+  //       medicalHistory: donor.medicalHistory,
+  //       message: "This is a donation request message", // Add the message field here
+  //     });
+  
+      
+
+  //     alert("Request sent successfully!");
+  //   } catch (err) {
+  //     console.error("Error sending request:", err);
+  //     alert("Failed to send request");
+  //   }
+  // };
+  
+  const handleRequest = async (donor) => {
+    try {
+      // Disable the button after the request
+      setRequestStatus((prev) => {
+        const updatedStatus = {
+          ...prev,
+          [donor.phone]: "Check Notifications for further update.",
+        };
+        
+        // Save to localStorage
+        localStorage.setItem('requestStatus', JSON.stringify(updatedStatus));
+      return updatedStatus;
+      });
+  
+      const response = await axios.post("http://localhost:5000/api/donation-requests", {
+        name: donor.fullName,
+        phone: donor.phone,
+        gender: donor.gender,
+        dob: donor.dob,
+        city: donor.city,
+        state: donor.state,
+        country: donor.country,
+        organ: donor.organType,
+        medicalHistory: donor.medicalHistory,
+        message: "This is a donation request message", // Add the message field here
+      });
+  
+      alert("Request sent successfully!");
+    } catch (err) {
+      console.error("Error sending request:", err);
+      alert("Failed to send request");
+    }
+  };
+  
+  // Fetch request status from localStorage when the page reloads
+  useEffect(() => {
+    const storedStatus = JSON.parse(localStorage.getItem("requestStatus")) || {};
+    setRequestStatus(storedStatus);
+  }, []);
+  
+  
   const handleSearch = async () => {
   try {
     const response = await axios.get("http://localhost:5000/api/donors/search", {
@@ -158,7 +253,7 @@ const FindDonors = () => {
       </Card>
 
       {/* Donor Results */}
-      <Container sx={{ marginTop: 4 }}>
+      {/* <Container sx={{ marginTop: 4 }}>
         <Grid container spacing={3} justifyContent="center">
           {donors.length > 0 ? (
             donors.map((donor, index) => (
@@ -211,7 +306,72 @@ const FindDonors = () => {
             </Typography>
           ) : null}
         </Grid>
-      </Container>
+      </Container> */}
+
+<Box sx={{ marginTop: 5 }}>
+          {donors.length > 0 ? (
+            <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+              <Table>
+                <TableHead sx={{ backgroundColor: "#E8F5E9" }}>
+                  <TableRow>
+                    <TableCell><strong>Name</strong></TableCell>
+                    <TableCell><strong>Phone</strong></TableCell>
+                    <TableCell><strong>Gender</strong></TableCell>
+                    <TableCell><strong>DOB</strong></TableCell>
+                    <TableCell><strong>City</strong></TableCell>
+                    <TableCell><strong>State</strong></TableCell>
+                    <TableCell><strong>Country</strong></TableCell>
+                    <TableCell><strong>Organ</strong></TableCell>
+                    <TableCell><strong>Medical History</strong></TableCell>
+                    <TableCell><strong>Action</strong></TableCell>
+
+                    
+                    
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {donors.map((donor, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{donor.fullName}</TableCell>
+                      <TableCell>{donor.phone}</TableCell>
+                      <TableCell>{donor.gender}</TableCell>
+                      <TableCell>{donor.dob}</TableCell>
+                      <TableCell>{donor.city}</TableCell>
+                      <TableCell>{donor.state}</TableCell>
+                      <TableCell>{donor.country}</TableCell>
+                      <TableCell>{donor.organType}</TableCell>
+                      <TableCell sx={{ color: "red" }}>{donor.medicalHistory}</TableCell>
+                      <TableCell>
+                        
+        <Button
+          variant="contained"
+          size="small"
+          color="secondary"
+          onClick={() => handleRequest(donor)}
+          disabled={requestStatus[donor.phone] === "Check Notifications for further update."}  // Disable if the status matches
+        >
+          {requestStatus[donor.phone] || "Request"}
+        </Button>
+        
+      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          ) : searched ? (
+            <Typography
+              variant="h6"
+              sx={{
+                textAlign: "center",
+                color: "red",
+                marginTop: 3,
+              }}
+            >
+              No donors found
+            </Typography>
+          ) : null}
+        </Box>
     </Box>
   );
 };
