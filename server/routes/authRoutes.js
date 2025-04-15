@@ -9,6 +9,8 @@ const Admin = require("../models/Admin"); // ⬅ Add this import
 const router = express.Router();
 
 // Login API
+// 
+// Login API
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -26,26 +28,34 @@ router.post("/login", async (req, res) => {
       user = await Recipient.findOne({ email });
     }
 
-    // If still not found, return error
     if (!user) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    // Compare the password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    // Generate JWT token
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "24h" });
+    // ✅ Use consistent token payload
+    const token = jwt.sign(
+      {
+        userId: user._id,
+        name: user.fullName || user.name,
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "24h" }
+    );
 
     res.status(200).json({ token, message: "Login successful" });
 
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 
 

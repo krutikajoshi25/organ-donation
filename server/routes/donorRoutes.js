@@ -71,36 +71,56 @@ router.post("/register", async (req, res) => {
 //   }
 // });
 
+// router.get("/search", async (req, res) => {
+//   try {
+//       const { organType, city, state, country } = req.query;
+
+//       const query = {};
+
+//       if (organType) {
+//         query.organType = organType;
+//         // ✅ Match any organ inside the array
+//       }
+//       if (city) {
+//           query.city = new RegExp(`^${city}$`, "i");  // ✅ Case-insensitive match
+//       }
+//       if (state) {
+//           query.state = new RegExp(`^${state}$`, "i"); // ✅ Case-insensitive match
+//       }
+//       if (country) {
+//           query.country = new RegExp(`^${country}$`, "i"); // ✅ Case-insensitive match
+//       }
+
+//       const donors = await Donor.find(query);
+//       res.json({ success: true, donors });
+
+//   } catch (error) {
+//       console.error("Error searching donors:", error);
+//       res.status(500).json({ success: false, message: "Server error" });
+//   }
+// });
+
+
+
 router.get("/search", async (req, res) => {
   try {
-      const { organType, city, state, country } = req.query;
+    const { organType, city, state, country } = req.query;
 
-      const query = {};
+    const query = {};
 
-      if (organType) {
-          query.organType = { $in: [organType] };  // ✅ Match any organ inside the array
-      }
-      if (city) {
-          query.city = new RegExp(`^${city}$`, "i");  // ✅ Case-insensitive match
-      }
-      if (state) {
-          query.state = new RegExp(`^${state}$`, "i"); // ✅ Case-insensitive match
-      }
-      if (country) {
-          query.country = new RegExp(`^${country}$`, "i"); // ✅ Case-insensitive match
-      }
+    if (organType) query.organType = organType;
+    if (city) query.city = new RegExp(`^${city}$`, "i");
+    if (state) query.state = new RegExp(`^${state}$`, "i");
+    if (country) query.country = new RegExp(`^${country}$`, "i");
 
-      const donors = await Donor.find(query);
-      res.json({ success: true, donors });
-
+    const donors = await Donor.find(query);
+    console.log("Search query:", query); // 🧠 Check what you're filtering on
+    res.json({ success: true, donors });
   } catch (error) {
-      console.error("Error searching donors:", error);
-      res.status(500).json({ success: false, message: "Server error" });
+    console.error("Error searching donors:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
-
-
-
 
 
 module.exports = router;
