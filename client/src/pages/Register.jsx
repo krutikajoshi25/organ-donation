@@ -123,7 +123,9 @@ const Register = () => {
       if (!response.ok) {
         throw new Error(result.message || "Registration failed");
       }
-
+      localStorage.setItem("userToken", result.token);         // Token
+      localStorage.setItem("user", JSON.stringify(result.recipient));  // Full recipient details
+      
       alert("Registration Successful!");
 
       setDonorData({

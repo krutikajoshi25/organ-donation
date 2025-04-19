@@ -50,7 +50,7 @@ const Login = () => {
         alert("Login Successful!");
         console.log("Token:", data.token); // Store the token for authentication
         localStorage.setItem("userToken", data.token);
-        
+        localStorage.setItem("user", JSON.stringify(data.recipient)); // ✅ Add this
 
         navigate("/");
 

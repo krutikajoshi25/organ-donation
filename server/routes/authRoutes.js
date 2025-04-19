@@ -10,53 +10,44 @@ const router = express.Router();
 
 // Login API
 // 
-// Login API
+
+// Recipient Login
 router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-
   try {
-    // Check in User collection
-    let user = await User.findOne({ email });
+    const { email, password } = req.body;
 
-    // If not found, check in Donor collection
-    if (!user) {
-      user = await Donor.findOne({ email });
-    }
-
-    // If not found, check in Recipient collection
-    if (!user) {
-      user = await Recipient.findOne({ email });
-    }
-
-    if (!user) {
+    // Check if recipient exists
+    const recipient = await Recipient.findOne({ email });
+    if (!recipient) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    // Compare password
+    const isMatch = await bcrypt.compare(password, recipient.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    // ✅ Use consistent token payload
+    // Generate token
     const token = jwt.sign(
-      {
-        userId: user._id,
-        name: user.fullName || user.name,
-        role: user.role,
-      },
+      { id: recipient._id, role: "recipient" },
       process.env.JWT_SECRET,
-      { expiresIn: "24h" }
+      { expiresIn: "1h" }
     );
+    
 
-    res.status(200).json({ token, message: "Login successful" });
+    // ✅ Send full recipient data along with token
+    res.status(200).json({
+      message: "Login successful",
+      token,
+      recipient, // 👈 this will include fullName, phone, dob, etc.
+    });
 
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+    console.error("Login error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
-
-
 
 
 // ✅ Admin Login Route (separate from regular login)

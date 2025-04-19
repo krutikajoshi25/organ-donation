@@ -17,83 +17,40 @@ const Notifications = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Fetch notifications on component mount
   useEffect(() => {
     fetchNotifications();
   }, []);
 
-  // Function to fetch notifications from the backend
-  // const fetchNotifications = async () => {
-  //   try {
-  //     const res = await axios.get('http://localhost:5000/api/notifications/user', {
-  //       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }, // Assuming token is stored in localStorage
-  //     });
-  //     const fetchedNotifications = res.data;
-  //     setNotifications(fetchedNotifications); // Store the fetched notifications
-  //     setLoading(false); // Set loading to false after data is fetched
-  //   } catch (err) {
-  //     console.error('Failed to fetch notifications:', err);
-  //     setError('Failed to fetch notifications'); // Set error message if fetching fails
-  //     setLoading(false); // Set loading to false even on error
-  //   }
-  // };
-
-
   const fetchNotifications = async () => {
     try {
-      const token = localStorage.getItem('userToken'); // From login
-  
-      // Log the token to check if it's being retrieved correctly
-      console.log("Fetched token:", token);
-  
-      // Check if the token exists before making the request
-      if (!token) {
-        throw new Error("Token is missing. Please log in again.");
-      }
-  
-      // Send the request to the correct backend endpoint to fetch notifications
+      const token = localStorage.getItem('userToken');
+
+      if (!token) throw new Error("Token is missing. Please log in again.");
+
       const res = await axios.get('http://localhost:5000/api/donation-requests/notifications', {
-        
         headers: {
-          Authorization: `Bearer ${token}`, // Pass the token in the Authorization header
+          Authorization: `Bearer ${token}`,
         },
       });
-  
-      // Log the response to see if the data is fetched correctly
-      console.log("Notifications data:", res.data);
-  
-      // Assuming you want to set the notifications data here
-      setNotifications(res.data); // Set the fetched notifications data
-      setLoading(false); // Stop loading state when data is received
+
+      setNotifications(res.data);
+      setLoading(false);
     } catch (err) {
-      // Log the full error to the console for better debugging
       console.error('Failed to fetch notifications:', err);
-  
-      // Check if the error response has a message or not
+
       if (err.response) {
-        console.error("Error Response:", err.response.data);
-        // Check if the error is due to token expiration (401 Unauthorized)
         if (err.response.status === 401) {
           setError("Session expired. Please log in again.");
-          // Optionally, you can redirect the user to the login page
-          // window.location.href = '/login';
         } else {
           setError(`Error: ${err.response.data.message || "Failed to fetch notifications"}`);
         }
       } else {
-        // General error handling if no response exists
         setError("An unexpected error occurred. Please try again.");
       }
-  
-      setLoading(false); // Stop loading state even in case of an error
+
+      setLoading(false);
     }
   };
-  
-  
-  
-  
-  
-  
 
   return (
     <Box
@@ -145,7 +102,7 @@ const Notifications = () => {
           <List>
             {notifications.map((notif, index) => (
               <Paper
-                key={notif._id || index} // Use a unique ID if possible
+                key={notif._id || index}
                 elevation={3}
                 sx={{
                   mb: 2,
@@ -162,7 +119,12 @@ const Notifications = () => {
                 <ListItem disablePadding>
                   <Avatar
                     sx={{
-                      bgcolor: notif.isRead ? '#66BB6A' : '#388E3C',
+                      bgcolor:
+                        notif.status === 'Accepted'
+                          ? '#2E7D32'
+                          : notif.status === 'Rejected'
+                          ? '#D32F2F'
+                          : '#FBC02D',
                       mr: 2,
                     }}
                   >
@@ -170,20 +132,33 @@ const Notifications = () => {
                   </Avatar>
                   <ListItemText
                     primary={
-                      <Typography
-                        variant="body1"
-                        sx={{
-                          fontWeight: notif.isRead ? '500' : 'bold',
-                          color: '#2E7D32',
-                        }}
-                      >
-                        {notif.message}
+  <Typography
+    variant="body1"
+    sx={{
+      fontWeight: notif.isRead ? '500' : 'bold',
+      color:
+        notif.status === 'Accepted'
+          ? 'green'
+          : notif.status === 'Rejected'
+          ? 'red'
+          : '#f57c00',
+    }}
+  >
+    {notif.message}
+ 
+
                       </Typography>
                     }
                     secondary={
-                      <Typography variant="caption" color="textSecondary">
-                        {new Date(notif.createdAt).toLocaleString()}
-                      </Typography>
+                      <>
+                        <Typography variant="caption" color="textSecondary">
+                          {notif.message}
+                        </Typography>
+                        <br />
+                        <Typography variant="caption" color="textSecondary">
+                          {new Date(notif.createdAt).toLocaleString()}
+                        </Typography>
+                      </>
                     }
                   />
                 </ListItem>

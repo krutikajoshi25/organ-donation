@@ -1,5 +1,5 @@
-import axios from "axios";
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import {
   Box,
   Typography,
@@ -7,9 +7,6 @@ import {
   MenuItem,
   Button,
   Grid,
-  Card,
-  CardContent,
-  Container,
   Table,
   TableBody,
   TableCell,
@@ -32,173 +29,165 @@ const organTypes = [
   "Bone Marrow",
   "Tissue",
 ];
-const locations = ["New York", "Los Angeles", "Chicago", "Houston", "Miami"];
 
 const FindDonors = () => {
   const [searchCriteria, setSearchCriteria] = useState({
     organType: "",
     city: "",
     state: "",
-    country: "",
+    country: "India",
   });
 
-  // const [donors, setDonors] = useState([]);
   const [donors, setDonors] = useState([]);
   const [searched, setSearched] = useState(false);
   const [requestedDonors, setRequestedDonors] = useState([]);
   const [requestStatus, setRequestStatus] = useState({});
+  const [recipientId, setRecipientId] = useState("");
 
-
-
+  useEffect(() => {
+   
+  }, []);
 
   const handleChange = (e) => {
     setSearchCriteria({ ...searchCriteria, [e.target.name]: e.target.value });
   };
 
-
-
-
-
-  // const handleRequest = async (donor) => {
-  //   try {
-
-  //      // Disable the button after request
-  //   setRequestStatus((prev) => ({
-  //     ...prev,
-  //     [donor.phone]: "Request sent.notify you shortly.",
-  //   }
- 
-  // ));
-
-
-
-    
-  //     const response = await axios.post("http://localhost:5000/api/donation-requests", {
-  //       name: donor.fullName,
-  //       phone: donor.phone,
-  //       gender: donor.gender,
-  //       dob: donor.dob,
-  //       city: donor.city,
-  //       state: donor.state,
-  //       country: donor.country,
-  //       organ: donor.organType,
-  //       medicalHistory: donor.medicalHistory,
-  //       message: "This is a donation request message", // Add the message field here
-  //     });
-  
-      
-
-  //     alert("Request sent successfully!");
-  //   } catch (err) {
-  //     console.error("Error sending request:", err);
-  //     alert("Failed to send request");
-  //   }
-  // };
-  
-  const handleRequest = async (donor) => {
+  const handleSearch = async () => {
     try {
-      // Disable the button after the request
-      setRequestStatus((prev) => {
-        const updatedStatus = {
-          ...prev,
-          [donor.phone]: "Check Notifications for further update.",
-        };
-        
-        // Save to localStorage
-        localStorage.setItem('requestStatus', JSON.stringify(updatedStatus));
-      return updatedStatus;
+      const res = await axios.get("http://localhost:5000/api/donors/search", {
+        params: searchCriteria,
       });
-  
-      const response = await axios.post("http://localhost:5000/api/donation-requests", {
-        name: donor.fullName,
-        phone: donor.phone,
-        gender: donor.gender,
-        dob: donor.dob,
-        city: donor.city,
-        state: donor.state,
-        country: donor.country,
-        organ: donor.organType,
-        medicalHistory: donor.medicalHistory,
-        message: "This is a donation request message", // Add the message field here
-      });
-  
-      alert("Request sent successfully!");
+
+      const filtered = res.data.donors
+  .filter((donor) => donor.organType.includes(searchCriteria.organType))
+  .map((donor) => ({
+    ...donor,
+    donorId: donor._id, // Add this key while keeping everything else
+  }));
+
+
+setDonors(filtered);
+      setSearched(true);
     } catch (err) {
-      console.error("Error sending request:", err);
-      alert("Failed to send request");
+      console.error("Error fetching donors:", err);
     }
   };
-  
-  // Fetch request status from localStorage when the page reloads
-  useEffect(() => {
-    const storedStatus = JSON.parse(localStorage.getItem("requestStatus")) || {};
-    setRequestStatus(storedStatus);
-  }, []);
-  
-  
-  const handleSearch = async () => {
+
+  const handleRequest = async (donor) => {
   try {
-    const response = await axios.get("http://localhost:5000/api/donors/search", {
-      params: {
-        organType: searchCriteria.organType,
-        city: searchCriteria.city,
-        state: searchCriteria.state,
-        country: searchCriteria.country,
-      },
+    console.log('Donor object passed:', donor);
+
+    const donorId = donor.donorId || donor._id;
+    if (!donorId) {
+      alert("Donor information missing.");
+      return;
+    }
+
+    const token = localStorage.getItem("userToken");
+    if (!token) {
+      alert("Please log in to make a donation request.");
+      return;
+    }
+
+    // Decode token to extract recipient ID
+    let recipientId, createdBy;
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      recipientId = payload.id || payload.userId;
+      createdBy = recipientId;
+    } catch (decodeErr) {
+      console.warn("Invalid token.", decodeErr);
+      alert("Invalid session. Please log in again.");
+      return;
+    }
+
+    // Get recipient details from localStorage
+    const user = JSON.parse(localStorage.getItem("user")) || {};
+    console.log("User from localStorage:", user);
+
+    if (!user.fullName || !user.phone || !user.gender || !user.dob) {
+      alert("Incomplete recipient data. Please re-login.");
+      return;
+    }
+
+    const organToSend = Array.isArray(donor.organType)
+      ? donor.organType[0]
+      : donor.organType;
+
+    const requestBody = {
+      donorId: donorId,
+      organ: [organToSend], // as array of strings
+      message: "Donation request sent.",
+      recipientId,
+      createdBy,
+      name: user.fullName || "",
+      phone: user.phone || "",
+      gender: user.gender || "",
+      dob: user.dob ? new Date(user.dob) : null,
+      city: user.city || "",
+      state: user.state || "",
+      country: user.country || "",
+      medicalHistory: user.medicalHistory || "",
+    };
+
+    console.log("📤 Sending payload:", requestBody);
+
+    const response = await axios.post(
+      "http://localhost:5000/api/donation-requests",
+      requestBody,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    alert("Request sent successfully!");
+
+    // Update request status to prevent repeated requests
+    const key = `${donorId}_${organToSend}`;
+    setRequestStatus((prev) => {
+      const updated = { ...prev, [key]: "Request sent. You will be notified shortly." };
+      localStorage.setItem("requestStatus", JSON.stringify(updated));
+      return updated;
     });
 
-    console.log("Response Data:", response.data);
-
-    const filteredDonors = response.data.donors
-      .filter((donor) => donor.organType.includes(searchCriteria.organType)) // Ensure only searched organ type is shown
-      .map((donor) => ({
-        fullName: donor.fullName,
-        phone: donor.phone,
-        gender: donor.gender,
-        dob: new Date(donor.dob).toLocaleDateString(),
-        city: donor.city,
-        state: donor.state,
-        country: donor.country,
-        organType: searchCriteria.organType, // Only show the searched organ
-        medicalHistory: donor.medicalHistory || "No medical history provided",
-      }));
-
-    setDonors(filteredDonors);
-    setSearched(true);
-  } catch (error) {
-    console.error("Error fetching donors:", error);
+  } catch (err) {
+    console.error("❌ Request failed:", err?.response?.data || err);
+    alert(err?.response?.data?.message || "Failed to send request.");
   }
 };
 
+ 
   useEffect(() => {
-    console.log("Updated Donors State:", donors);
-  }, [donors]);
+    const stored = JSON.parse(localStorage.getItem("requestStatus")) || {};
+    setRequestStatus(stored);
+  }, []);
 
   return (
     <Box
       sx={{
         width: "100vw",
-        height: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexDirection: "column",
+        minHeight: "100vh",
         background: "linear-gradient(to bottom, #2E7D32, #1B5E20)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
         padding: 4,
       }}
     >
-      <Typography variant="h4" sx={{ color: "white", fontWeight: "bold", marginBottom: 3 }}>
+      <Typography variant="h4" sx={{ color: "white", fontWeight: "bold", mb: 3 }}>
         Find a Donor
       </Typography>
-      <Navbar />
-      
-      {/* Search Card */}
-      <Card
+<Navbar/>
+      <Box
         sx={{
-          padding: 4,
+          backgroundColor: "white",
           borderRadius: 3,
-          background: "white",
-          boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.2)",
+          padding: 4,
+          boxShadow: 3,
+          width: "90%",
+          maxWidth: 1000,
         }}
       >
         <Grid container spacing={2} justifyContent="center">
@@ -218,21 +207,36 @@ const FindDonors = () => {
               ))}
             </TextField>
           </Grid>
-
           <Grid item>
-            <TextField label="City" name="city" value={searchCriteria.city} onChange={handleChange} sx={{ width: 200 }} />
+            <TextField
+              label="City"
+              name="city"
+              value={searchCriteria.city}
+              onChange={handleChange}
+              sx={{ width: 200 }}
+            />
           </Grid>
-
           <Grid item>
-            <TextField label="State" name="state" value={searchCriteria.state} onChange={handleChange} sx={{ width: 200 }} />
+            <TextField
+              label="State"
+              name="state"
+              value={searchCriteria.state}
+              onChange={handleChange}
+              sx={{ width: 200 }}
+            />
           </Grid>
-
           <Grid item>
-            <TextField select label="Country" name="country" value={searchCriteria.country} onChange={handleChange} sx={{ width: 200 }}>
+            <TextField
+              select
+              label="Country"
+              name="country"
+              value={searchCriteria.country}
+              onChange={handleChange}
+              sx={{ width: 200 }}
+            >
               <MenuItem value="India">India</MenuItem>
             </TextField>
           </Grid>
-
           <Grid item>
             <Button
               variant="contained"
@@ -240,7 +244,7 @@ const FindDonors = () => {
               sx={{
                 background: "#2E7D32",
                 color: "white",
-                paddingX: 4,
+                px: 4,
                 fontWeight: "bold",
                 borderRadius: 2,
                 "&:hover": { background: "#1B5E20" },
@@ -250,128 +254,61 @@ const FindDonors = () => {
             </Button>
           </Grid>
         </Grid>
-      </Card>
+      </Box>
 
-      {/* Donor Results */}
-      {/* <Container sx={{ marginTop: 4 }}>
-        <Grid container spacing={3} justifyContent="center">
-          {donors.length > 0 ? (
-            donors.map((donor, index) => (
-              <Grid key={index} xs={12} sm={6} md={4}>
-                <Card
-                  sx={{
-                    background: "white",
-                    textAlign: "center",
-                    boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.3)",
-                    borderRadius: 3,
-                    transition: "transform 0.3s ease-in-out",
-                    "&:hover": { transform: "scale(1.05)" },
-                  }}
-                >
-                  <CardContent>
-                    <Typography variant="h6" sx={{ fontWeight: "bold", color: "#2E7D32" }}>
-                      {donor.fullName}
-                    </Typography>
-                    <Typography variant="body1" sx={{ marginTop: 1 }}>
-                      <strong>Phone:</strong> {donor.phone}
-                    </Typography>
-                    <Typography variant="body1" sx={{ marginTop: 1 }}>
-                      <strong>Gender:</strong> {donor.gender}
-                    </Typography>
-                    <Typography variant="body1" sx={{ marginTop: 1 }}>
-                      <strong>DOB:</strong> {donor.dob}
-                    </Typography>
-                    <Typography variant="body1" sx={{ marginTop: 1 }}>
-                      <strong>City:</strong> {donor.city}
-                    </Typography>
-                    <Typography variant="body1" sx={{ marginTop: 1 }}>
-                      <strong>State:</strong> {donor.state}
-                    </Typography>
-                    <Typography variant="body1" sx={{ marginTop: 1 }}>
-                      <strong>Country:</strong> {donor.country}
-                    </Typography>
-                    <Typography variant="body1" sx={{ marginTop: 1 }}>
-                      <strong>Organ Type:</strong> {donor.organType}
-                    </Typography>
-                    <Typography variant="body1" sx={{ marginTop: 1, color: "red" }}>
-                      <strong>Medical History:</strong> {donor.medicalHistory}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))
-          ) : searched ? ( // Show "No donors found" only if search has been performed
-            <Typography variant="h6" sx={{ width: "100%", marginTop: 2, color: "red", textAlign: "center" }}>
-              No donors found
-            </Typography>
-          ) : null}
-        </Grid>
-      </Container> */}
+      {/* Donor Table */}
+      <Box sx={{ mt: 5, width: "90%", maxWidth: 1000 }}>
+        {donors.length > 0 ? (
+          <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+            <Table>
+              <TableHead sx={{ backgroundColor: "#E8F5E9" }}>
+                <TableRow>
+                  <TableCell><strong>Donor ID</strong></TableCell>
+                  <TableCell><strong>Organ</strong></TableCell>
+                  <TableCell><strong>Name</strong></TableCell>
+                  <TableCell><strong>Phone</strong></TableCell>
+                  <TableCell><strong>Gender</strong></TableCell>
+                  {/* <TableCell><strong>Recipient ID</strong></TableCell> */}
+                  <TableCell><strong>Action</strong></TableCell>
 
-<Box sx={{ marginTop: 5 }}>
-          {donors.length > 0 ? (
-            <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
-              <Table>
-                <TableHead sx={{ backgroundColor: "#E8F5E9" }}>
-                  <TableRow>
-                    <TableCell><strong>Name</strong></TableCell>
-                    <TableCell><strong>Phone</strong></TableCell>
-                    <TableCell><strong>Gender</strong></TableCell>
-                    <TableCell><strong>DOB</strong></TableCell>
-                    <TableCell><strong>City</strong></TableCell>
-                    <TableCell><strong>State</strong></TableCell>
-                    <TableCell><strong>Country</strong></TableCell>
-                    <TableCell><strong>Organ</strong></TableCell>
-                    <TableCell><strong>Medical History</strong></TableCell>
-                    <TableCell><strong>Action</strong></TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {donors.map((donor) => (
+                  <TableRow key={donor.donorId}>
+                    <TableCell>{donor.donorId}</TableCell>
+                    <TableCell>{searchCriteria.organType}</TableCell>
+                    <TableCell>{donor.fullName}</TableCell>
+                    <TableCell>{donor.phone}</TableCell>
+                    <TableCell>{donor.gender}</TableCell>
 
-                    
-                    
+                    {/* <TableCell>{recipientId || "Not logged in"}</TableCell> */}
+                    <TableCell>
+  <Button
+    variant="contained"
+    size="small"
+    color="secondary"
+    onClick={() => handleRequest(donor)}
+    disabled={
+      requestStatus[`${donor._id}_${donor.organType}`] === "Request sent. You will be notified shortly."
+    }
+  >
+    {requestStatus[`${donor._id}_${donor.organType}`] || "Request"}
+  </Button>
+</TableCell>
+
+
                   </TableRow>
-                </TableHead>
-                <TableBody>
-                  {donors.map((donor, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{donor.fullName}</TableCell>
-                      <TableCell>{donor.phone}</TableCell>
-                      <TableCell>{donor.gender}</TableCell>
-                      <TableCell>{donor.dob}</TableCell>
-                      <TableCell>{donor.city}</TableCell>
-                      <TableCell>{donor.state}</TableCell>
-                      <TableCell>{donor.country}</TableCell>
-                      <TableCell>{donor.organType}</TableCell>
-                      <TableCell sx={{ color: "red" }}>{donor.medicalHistory}</TableCell>
-                      <TableCell>
-                        
-        <Button
-          variant="contained"
-          size="small"
-          color="secondary"
-          onClick={() => handleRequest(donor)}
-          disabled={requestStatus[donor.phone] === "Check Notifications for further update."}  // Disable if the status matches
-        >
-          {requestStatus[donor.phone] || "Request"}
-        </Button>
-        
-      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          ) : searched ? (
-            <Typography
-              variant="h6"
-              sx={{
-                textAlign: "center",
-                color: "red",
-                marginTop: 3,
-              }}
-            >
-              No donors found
-            </Typography>
-          ) : null}
-        </Box>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        ) : searched ? (
+          <Typography variant="h6" sx={{ color: "red", textAlign: "center", mt: 3 }}>
+            No donors found
+          </Typography>
+        ) : null}
+      </Box>
     </Box>
   );
 };

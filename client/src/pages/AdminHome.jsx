@@ -5,6 +5,43 @@ function AdminHome() {
   const [requests, setRequests] = useState([]);
 
   // Fetch donation requests from backend
+  
+  const handleStatusChange = async (requestId, status) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/donation-requests/${requestId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
+      });
+  
+      if (response.ok) {
+        const updatedRequest = await response.json();
+        console.log("Status updated successfully", updatedRequest);
+  
+        setRequests((prevRequests) =>
+          prevRequests.map((request) =>
+            request._id === updatedRequest._id ? updatedRequest : request
+          )
+        );
+  
+        // ✅ THIS is where the alert should go
+        alert(`Request ${status} successfully!`);
+      } else {
+        console.log("Error updating status");
+        alert("Failed to update request status.");
+      }
+    } catch (error) {
+      console.error('Error updating request status:', error);
+      alert("Something went wrong!");
+    }
+  };
+  
+  
+
+
+
   useEffect(() => {
     fetchRequests();
   }, []);
@@ -17,23 +54,30 @@ function AdminHome() {
       console.error('Failed to fetch requests:', err);
     }
   };
-
+ 
   // Handle Accept/Reject status change
-  const handleStatusChange = async (id, newStatus) => {
-    try {
-      await axios.put(`http://localhost:5000/api/donation-requests/${id}`, {
-        status: newStatus
-      });
+  // const handleStatusChange = async (id, newStatus) => {
+  //   try {
+  //     await axios.put(`http://localhost:5000/api/donation-requests/${id}`, {
+  //       status: newStatus
+  //     });
 
-      // await createNotification(id, newStatus);
+  //     // await createNotification(id, newStatus);
 
-      alert(`Request ${newStatus}`);
-      fetchRequests(); // Refresh list after update
-    } catch (error) {
-      console.error("Error updating status:", error);
-      alert("Failed to update request status.");
-    }
-  };
+  //     alert(`Request ${newStatus}`);
+  //     fetchRequests(); // Refresh list after update
+  //   } catch (error) {
+  //     console.error("Error updating status:", error);
+  //     alert("Failed to update request status.");
+  //   }
+  // };
+
+  
+  
+  
+
+  
+  
 
   
   

@@ -74,7 +74,9 @@ const router = express.Router();
 
 // Recipient Registration Route
 router.post("/register", async (req, res) => {
+  
   try {
+    console.log("Received body:", req.body);
     const { fullName, email, phone, gender, dob, city, state, country, organRequired, urgencyLevel, doctorContact, password } = req.body;
 
     // Example validation or logic that might cause issues
@@ -116,7 +118,9 @@ router.post("/register", async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    res.status(201).json({ message: "Recipient registered successfully", token });
+    res.status(201).json({ message: "Recipient registered successfully", token,recipient: newRecipient, });
+    localStorage.setItem("user", JSON.stringify(result.recipient)); // or result.user if that's your key
+
 
   } catch (error) {
     console.error("Error during registration:", error); // Log detailed error
