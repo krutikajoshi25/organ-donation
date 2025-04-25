@@ -1,0 +1,41 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+# Add these to prevent all this clutter from showing up
+
+# Ignore all node_modules from all locations
+**/node_modules/
+
+# Ignore source maps
+*.map
+
+# Ignore environment config
+.env
+
+# Ignore build folders
+build/
+out/
+.cache/
+.next/
+coverage/
